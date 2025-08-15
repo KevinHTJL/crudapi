@@ -1,52 +1,56 @@
-//package com.example.crudapi.service.impl;
-//
-//import com.example.crudapi.entity.User;
-//import com.example.crudapi.repository.UserRepository;
-//import com.example.crudapi.services.AuthService;
-//import com.example.crudapi.util.JwtUtil;
-//import org.springframework.security.crypto.password.PasswordEncoder;
-//import org.springframework.stereotype.Service;
-//
-//import java.util.Optional;
-//
-//@Service
-//public class AuthServiceImpl implements AuthService {
-//
-//    private final UserRepository userRepository;
-//    private final PasswordEncoder passwordEncoder;
-//    private final JwtUtil jwtUtil;
-//
-//    public AuthServiceImpl(UserRepository userRepository,
-//                           PasswordEncoder passwordEncoder,
-//                           JwtUtil jwtUtil) {
-//        this.userRepository = userRepository;
-//        this.passwordEncoder = passwordEncoder;
-//        this.jwtUtil = jwtUtil;
-//    }
-//
-//    @Override
-//    public User register(User user) {
-//        Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
-//        if (existingUser.isPresent()) {
-//            throw new RuntimeException("Username sudah digunakan!");
-//        }
-//
-//        // Hash password sebelum simpan
-//        user.setPassword(passwordEncoder.encode(user.getPassword()));
-//        return userRepository.save(user);
-//    }
-//
-//    @Override
-//    public String login(String username, String password) {
-//        User user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new RuntimeException("Username tidak ditemukan!"));
-//
-//        // Cek password dengan hash
-//        if (!passwordEncoder.matches(password, user.getPassword())) {
-//            throw new RuntimeException("Password salah!");
-//        }
-//
-//        // Jika sukses, generate JWT token
-//        return JwtUtil.generateToken(user.getUsername());
-//    }
-//}
+package com.example.crudapi.services.impl;
+
+import com.example.crudapi.dto.RegisterRequestDTO;
+import com.example.crudapi.entity.Auth;
+import com.example.crudapi.repository.AuthRepository;
+import com.example.crudapi.security.JwtUtil;
+import com.example.crudapi.services.AuthService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class AuthServiceImpl implements AuthService {
+
+    private final AuthRepository authRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+
+    public AuthServiceImpl(AuthRepository authRepository,
+                           PasswordEncoder passwordEncoder,
+                           JwtUtil jwtUtil) {
+        this.authRepository = authRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
+    }
+
+    @Override
+    public Auth register(RegisterRequestDTO request) {
+        Optional<Auth> existingAuth = authRepository.findByUsername(request.getUsername());
+        if (existingAuth.isPresent()) {
+            throw new RuntimeException("Username sudah digunakan!");
+        }
+
+        Auth auth = new Auth();
+        auth.setUsername(request.getUsername());
+        auth.setPassword(passwordEncoder.encode(request.getPassword()));
+        auth.setEmail(request.getEmail());
+        auth.setName(request.getName());
+
+        return authRepository.save(auth);
+    }
+
+
+    @Override
+    public String login(String username, String password) {
+        Auth auth = authRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Username tidak ditemukan!"));
+
+        if (!passwordEncoder.matches(password, auth.getPassword())) {
+            throw new RuntimeException("Password salah!");
+        }
+
+        return jwtUtil.generateToken(auth.getUsername());
+    }
+}

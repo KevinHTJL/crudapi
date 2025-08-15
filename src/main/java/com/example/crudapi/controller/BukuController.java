@@ -35,8 +35,9 @@ public class BukuController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteBuku(@PathVariable Long id) {
+    public ResponseEntity<String> deleteBuku(@PathVariable Long id) {
         bukuService.deleteBuku(id);
+        return ResponseEntity.ok("Buku dengan id " + id + " berhasil dihapus");
     }
 
     @PutMapping("/{id}")
